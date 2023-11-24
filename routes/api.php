@@ -19,9 +19,9 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-});
+// Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+//     return $request->user();
+// });
 
 Route::middleware([ApiMiddleware::class])->group(function () {
 
@@ -40,8 +40,12 @@ Route::middleware([ApiMiddleware::class])->group(function () {
     Route::group([
         'middleware' => 'api',
         'prefix' => 'user'
-    ], function ($router) {
+    ], function ($router) {                
+        Route::post('eliminar', [UserController::class, 'postDelete']);
+        Route::post('actualizar', [UserController::class, 'postUpdate']);
+        Route::post('actualizarUuid', [UserController::class, 'postActualizacionUuid']);
         Route::post('crear', [UserController::class, 'postCreate']);
+        Route::post('crearApp', [UserController::class, 'postCreateFromApp']);
         Route::get('traerTodos', [UserController::class, 'getTodos']);
         Route::get('paginado', [UserController::class, 'getTodosPaginado']);
         Route::get('traerUno', [UserController::class, 'getDatos']);

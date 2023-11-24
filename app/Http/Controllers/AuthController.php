@@ -37,6 +37,7 @@ class AuthController extends Controller
             'email' => 'required|string',
             'password' => 'required|string',
             'admin' => 'nullable|boolean',
+            'deviceUuid' => 'nullable|string',
         ];
 
         $validator = Validator::make($input, $valRules);
@@ -50,6 +51,7 @@ class AuthController extends Controller
         $email = $params['email'];
         $password = $params['password'];
         $admin = $params['admin'];
+        $deviceUuid = $params['deviceUuid'];
 
         $objUser = User::where('email', $email)->first();
         if (!$objUser) {
@@ -65,11 +67,24 @@ class AuthController extends Controller
             if ($objUser->rol != "admin") {
                 return new Respuesta(-2, MensajesRespuesta::respuestas['ERROR_CREDENCIALES'], null, 409);
             }
+        } else {
+            $loginApiCpiaResponse = User::postLoginApiCpia($email, $password);
+            if ($loginApiCpiaResponse['status'] != "OK") {
+                return new Respuesta(-2, $loginApiCpiaResponse['message'], null, 409);
+            }
+
+            $objUser->password = bcrypt(sha1($password));
+            $objUser->api_token = $loginApiCpiaResponse['token'];
+        }
+        if (!$objUser->device_uuid) {
+            $objUser->device_uuid = $deviceUuid;
         }
 
+        $objUser->save();
+
         try {
-            if (!$token = JWTAuth::attempt(['email' => $email, 'password' => $password])) {
-                Log::info($email . ' ' . $password);
+            if (!$token = JWTAuth::attempt(['email' => $email, 'password' => $admin ? $password : sha1($password)])) {
+                Log::info($email . ' --+-- ' . $password);
                 return new Respuesta(-2, MensajesRespuesta::respuestas['ERROR_CREDENCIALES'], null, 409);
             }
         } catch (\Throwable $th) {

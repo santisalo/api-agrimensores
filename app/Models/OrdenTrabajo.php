@@ -30,6 +30,7 @@ class OrdenTrabajo extends Model
      */
     protected $guarded = [
         'id',
+        'user_id'
     ];
 
     /**

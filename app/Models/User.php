@@ -4,8 +4,11 @@ namespace App\Models;
 
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Laravel\Sanctum\HasApiTokens;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
@@ -25,6 +28,9 @@ class User extends Authenticatable implements JWTSubject
         'device_uuid',
         'rol',
         'habilitado',
+        'registrado',
+        'nro_matricula',
+        'id_matricula',
         'name',
         'email',
         'password',
@@ -67,5 +73,21 @@ class User extends Authenticatable implements JWTSubject
     public function getJWTCustomClaims()
     {
         return [];
+    }
+
+    public static function postLoginApiCpia($email, $password)
+    {
+        // make a POST to the login route
+        $client = new \GuzzleHttp\Client([
+            'verify' => false,
+        ]);
+        $response = $client->post('https://apiapptst.nubecpia.com.ar/api/login', [
+            'form_params' => [
+                'email' => $email,
+                'password' => $password
+            ],
+        ]);
+        $respuesta = $response->getBody()->getContents();
+        return json_decode($respuesta, true);
     }
 }

@@ -16,6 +16,7 @@ class CreateOrdenTrabajoTable extends Migration
     {
         Schema::create('orden_trabajo', function (Blueprint $table) {
             $table->id();
+            $table->integer('user_id');
             $table->integer('id_ot')->nullable();
             $table->integer('estado_orden_trabajo')->nullable();
             $table->string('geo')->nullable();
