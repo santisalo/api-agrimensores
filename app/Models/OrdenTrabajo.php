@@ -40,4 +40,55 @@ class OrdenTrabajo extends Model
      */
     protected $hidden = [];
 
+    public static function getOrdenTrabajoApiCpia($nroOrdenTrabajo, $idMatricula, $token)
+    {
+        // make a GET to the getOt route
+        $client = new \GuzzleHttp\Client([
+            'verify' => false,
+        ]);
+        $response = $client->get('https://apiappprd.nubecpia.com.ar/api/ordenTrabajo?idMatricula='.$idMatricula.'&nroOrdenTrabajo='.$nroOrdenTrabajo
+            , [
+                'headers' => [
+                    'Authorization' => 'Bearer '.$token
+                ]
+            ]);
+        $respuesta = $response->getBody()->getContents();
+        return json_decode($respuesta, true);
+    }
+    public static function getOrdenesTrabajoApiCpia($idMatricula, $token)
+    {
+        // make a GET to the getOt route
+        $client = new \GuzzleHttp\Client([
+            'verify' => false,
+        ]);
+        $response = $client->get('https://apiappprd.nubecpia.com.ar/api/ordenesTrabajo?idMatricula='.$idMatricula
+            , [
+                'headers' => [
+                    'Authorization' => 'Bearer '.$token
+                ]
+            ]);
+        $respuesta = $response->getBody()->getContents();
+        return json_decode($respuesta, true);
+    }
+    public static function postLoginApiCpia($idMatricula, $nroOrdenTrabajo, $latitud, $longitud, $fechaHora, $token)
+    {
+        // make a POST to the login route
+        $client = new \GuzzleHttp\Client([
+            'verify' => false,
+        ]);
+        $response = $client->post('https://apiappprd.nubecpia.com.ar/api/ordenTrabajo/registroGeo', [
+            'form_params' => [
+                'idMatricula' => $idMatricula,
+                'nroOrdenTrabajo' => $nroOrdenTrabajo,
+                'latitud' => $latitud,
+                'longitud' => $longitud,
+                'fechaHora' => $fechaHora
+            ],
+            'headers' => [
+                'Authorization' => 'Bearer '.$token
+            ]
+        ],);
+        $respuesta = $response->getBody()->getContents();
+        return json_decode($respuesta, true);
+    }
 }

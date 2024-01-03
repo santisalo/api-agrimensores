@@ -23,10 +23,9 @@ class OrdenTrabajoController extends Controller
 
         //Validator
         $valRules = [
-            'nombre' => 'string|sometimes|required',
-            'limite' => 'string|sometimes|required',
-            'simple' => 'string|sometimes|required',
-            'empresaID' => 'string|sometimes|required',
+            'userId' => 'integer|required',
+            'fechaDesde' => 'string|nullable',
+            'fechaHasta' => 'string|nullable',
         ];
 
         $validator = Validator::make($input, $valRules);
@@ -36,17 +35,21 @@ class OrdenTrabajoController extends Controller
         }
 
         $params = Utils::transformaValRules($valRules, $request);
-        $nombre = $params['nombre'] ? $params['nombre'] : null;
-        $limite = $params['limite'] ? $params['limite'] : null;
-        $simple = $params['simple'] ? $params['simple'] : null;
+        $userId = $params['userId'];
+        $fechaDesde = $params['fechaDesde'];
+        $fechaHasta = $params['fechaHasta'];
 
         //Parametros
-        $listaBD = OrdenTrabajo::when($nombre, function ($query) use ($nombre) {
-            $query->where('nombre',  'LIKE', "%$nombre%");
+        $listaBD = OrdenTrabajo::when($userId, function ($query) use ($userId) {
+            $query->where('user_id', $userId);
         })
-            ->when($limite, function ($query) use ($limite) {
-                $query->take($limite);
+            ->when($fechaDesde, function ($query) use ($fechaDesde) {
+                $query->where('fecha_hora_envio', '>=', $fechaDesde);
             })
+            ->when($fechaHasta, function ($query) use ($fechaHasta) {
+                $query->where('fecha_hora_envio', '<=', $fechaHasta);
+            })
+            ->orderBy('fecha_hora_envio', 'desc')
             ->get();
 
 
@@ -67,9 +70,9 @@ class OrdenTrabajoController extends Controller
     }
 
     public function getTodosSinPaginacion()
-    {        
+    {
 
-        $listaBD = OrdenTrabajo::get();       
+        $listaBD = OrdenTrabajo::get();
 
         $listaDevolver = collect();
         if ($listaBD) {
@@ -96,6 +99,7 @@ class OrdenTrabajoController extends Controller
         //Validator
         $valRules = [
             'nombre' => 'string|sometimes|required',
+            'userId' => 'integer|sometimes|required',
             'nroPagina' => 'string|sometimes|required',
             'options' => 'json|sometimes|required',
         ];
@@ -109,6 +113,7 @@ class OrdenTrabajoController extends Controller
         $params = Utils::transformaValRules($valRules, $request);
 
         $nombre = $params['nombre'] ? $params['nombre'] : null;
+        $userId = $params['userId'] ? $params['userId'] : null;
         $options = $params['options'];
 
         Log::info($options);
@@ -117,10 +122,13 @@ class OrdenTrabajoController extends Controller
         $cantPorPag = $options['itemsPerPage'] ? $options['itemsPerPage'] : Constantes::ITEMS_POR_PAGINA;
 
         $listaBD = OrdenTrabajo::when($options['search']['valor'], function ($query) use ($options) {
-                $query->where($options['search']['campo'], 'LIKE', "%" . $options['search']['valor'] . "%");
-            })
+            $query->where($options['search']['campo'], 'LIKE', "%" . $options['search']['valor'] . "%");
+        })
             ->when($options && array_key_exists('categoriaId', $options) && $options['categoriaId'], function ($query) use ($options) {
                 $query->where('categoria_id', $options['categoriaId']);
+            })
+            ->when($userId, function ($query) use ($userId) {
+                $query->where('user_id', $userId);
             })
             ->when($options && count($options['sortBy']), function ($query) use ($options) {
                 foreach ($options['sortBy'] as $key => $sort) {
@@ -190,15 +198,24 @@ class OrdenTrabajoController extends Controller
             return new Respuesta(-3, MensajesRespuesta::respuestas['ERROR_OT_EXISTENTE'], null, 409);
         }
 
+        // get user
+        $user = auth()->user();
+        $token = $user->api_token;
+
+        $respuestaOrdenTrabajo = OrdenTrabajo::postLoginApiCpia($user->id_matricula, $idOt, explode(',', $geo)[0], explode(',', $geo)[1], $fechaHoraValidacion, $token);
+
+        Log::info($respuestaOrdenTrabajo);
+
         $objOrdenTrabajoNuevo = new OrdenTrabajo();
         $objOrdenTrabajoNuevo->id_ot = $idOt;
+        $objOrdenTrabajoNuevo->user_id = $user->id;
         $objOrdenTrabajoNuevo->geo = $geo;
         $objOrdenTrabajoNuevo->fecha_hora_carga = $fechaHoraCarga;
         $objOrdenTrabajoNuevo->fecha_hora_validacion = $fechaHoraValidacion;
         $objOrdenTrabajoNuevo->fecha_hora_envio = date('Y-m-d H:i:s');
         $objOrdenTrabajoNuevo->estado_orden_trabajo = Constantes::ESTADO_ORDEN_TRABAJO_ENVIADO_ID;
         $objOrdenTrabajoNuevo->save();
-        
+
         $objDevolver = $objOrdenTrabajoNuevo->id;
         return new Respuesta(
             1,
@@ -293,6 +310,62 @@ class OrdenTrabajoController extends Controller
             1,
             MensajesRespuesta::respuestas['OK_1'],
             null,
+            200
+        );
+    }
+
+    public function getDatosRemoto(Request $request)
+    {
+        $input = $request->all();
+        $valRules = [
+            'nroOrdenTrabajo' => 'string|required',
+        ];
+
+        $validator = Validator::make($input, $valRules);
+        if ($validator->fails()) {
+            return new Respuesta(-1, MensajesRespuesta::respuestas['ERROR_VALIDACION'], $validator->errors(), 422);
+        }
+
+        $params = Utils::transformaValRules($valRules, $request);
+        $nroOrdenTrabajo = $params['nroOrdenTrabajo'];
+        $idMatricula = null;
+        $token = null;
+
+        try {
+            $user = auth()->user();
+            $idMatricula = $user->id_matricula;
+            $token = $user->api_token;
+        } catch (\Throwable $th) {
+            return new Respuesta(-1, MensajesRespuesta::respuestas['ERROR_TOKEN'], $validator->errors(), 422);
+        }
+
+        $ordenTrabajo = OrdenTrabajo::getOrdenTrabajoApiCpia($nroOrdenTrabajo, $idMatricula, $token);
+
+        return new Respuesta(
+            1,
+            MensajesRespuesta::respuestas['OK_1'],
+            $ordenTrabajo,
+            200
+        );
+    }
+
+    
+    public function getTodosRemoto()
+    {
+        try {
+            $user = auth()->user();
+            $idMatricula = $user->id_matricula;
+            $token = $user->api_token;
+        } catch (\Throwable $th) {
+            return new Respuesta(-1, MensajesRespuesta::respuestas['ERROR_TOKEN'], MensajesRespuesta::respuestas['ERROR_TOKEN'], 422);
+        }
+
+        $ordenesTrabajo = OrdenTrabajo::getOrdenesTrabajoApiCpia($idMatricula, $token);
+
+        return new Respuesta(
+            1,
+            MensajesRespuesta::respuestas['OK_1'],
+            $ordenesTrabajo,
             200
         );
     }

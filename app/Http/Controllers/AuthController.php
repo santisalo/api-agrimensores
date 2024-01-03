@@ -58,6 +58,15 @@ class AuthController extends Controller
             return new Respuesta(-2, MensajesRespuesta::respuestas['ERROR_USUARIO_INEXISTENTE'], null, 409);
         }
 
+        Log::info('deviceUuid: ' . $deviceUuid);
+        Log::info('device_uuid: ' . $objUser->device_uuid);
+
+        if ($objUser->device_uuid) {
+            if ($objUser->device_uuid != $deviceUuid) {
+                return new Respuesta(-2, MensajesRespuesta::respuestas['ERROR_DEVICE_UUID'], null, 409);
+            }
+        }
+
         $objUser = User::where('email', $email)->where('habilitado', 1)->first();
         if (!$objUser) {
             return new Respuesta(-2, MensajesRespuesta::respuestas['ERROR_USUARIO_NO_HABILITADO'], null, 409);

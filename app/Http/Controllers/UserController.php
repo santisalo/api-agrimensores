@@ -364,6 +364,50 @@ class UserController extends Controller
             200
         );
     }
+    public function postHabilitar(Request $request)
+    {
+        $input = $request->all();
+        $valRules = [
+            'id' => 'required|integer',
+            'habilitado' => 'required|integer',
+        ];
+
+        $validator = Validator::make($input, $valRules);
+
+        if ($validator->fails()) {
+            Log::info("Error de validacion: " . $validator->errors());
+            return new Respuesta(-1, MensajesRespuesta::respuestas['ERROR_VALIDACION'], $validator->errors(), 422);
+        }
+
+        $params = Utils::transformaValRules($valRules, $request);
+        $id = $params['id'];
+        $habilitado = $params['habilitado'];
+
+        $objUser = User::where('id', $id)->first();
+        if (!$objUser) {
+            return new Respuesta(-2, MensajesRespuesta::respuestas['ERROR_USUARIO_NO_ENCONTRADO'], null, 409);
+        }
+
+        $objUser = User::where('id', $id)->where('habilitado', "!=", $habilitado)->first();
+        if (!$objUser) {
+            if ($habilitado){
+                return new Respuesta(-2, MensajesRespuesta::respuestas['ERROR_USUARIO_YA_HABILITADO'], null, 409);
+            }
+            return new Respuesta(-2, MensajesRespuesta::respuestas['ERROR_USUARIO_NO_HABILITADO'], null, 409);
+        }
+
+        $objUser->habilitado = $habilitado;
+        $objUser->save();
+
+        $objDevolver = $objUser->id;
+
+        return new Respuesta(
+            1,
+            MensajesRespuesta::respuestas['OK_1'],
+            $objDevolver,
+            200
+        );
+    }
     public function postActualizacionUuid(Request $request)
     {
         $input = $request->all();

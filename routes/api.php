@@ -43,6 +43,7 @@ Route::middleware([ApiMiddleware::class])->group(function () {
     ], function ($router) {                
         Route::post('eliminar', [UserController::class, 'postDelete']);
         Route::post('actualizar', [UserController::class, 'postUpdate']);
+        Route::post('habilitar', [UserController::class, 'postHabilitar']);
         Route::post('actualizarUuid', [UserController::class, 'postActualizacionUuid']);
         Route::post('crear', [UserController::class, 'postCreate']);
         Route::post('crearApp', [UserController::class, 'postCreateFromApp']);
@@ -60,6 +61,8 @@ Route::middleware([ApiMiddleware::class])->group(function () {
         Route::get('traerTodos', [OrdenTrabajoController::class, 'getTodos']);
         Route::get('paginado', [OrdenTrabajoController::class, 'getTodosPaginado']);
         Route::get('traerUno', [OrdenTrabajoController::class, 'getDatos']);
+        Route::get('traerUnoRemoto', [OrdenTrabajoController::class, 'getDatosRemoto']);     
+        Route::get('traerRemoto', [OrdenTrabajoController::class, 'getTodosRemoto']);        
     });
 
 });
