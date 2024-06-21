@@ -46,7 +46,7 @@ class OrdenTrabajo extends Model
         $client = new \GuzzleHttp\Client([
             'verify' => false,
         ]);
-        $response = $client->get('https://apiappprd.nubecpia.com.ar/api/ordenTrabajo?idMatricula='.$idMatricula.'&nroOrdenTrabajo='.$nroOrdenTrabajo
+        $response = $client->get('https://apiapp.nubecpia.com.ar/api/ordenTrabajo?idMatricula='.$idMatricula.'&nroOrdenTrabajo='.$nroOrdenTrabajo
             , [
                 'headers' => [
                     'Authorization' => 'Bearer '.$token
@@ -61,7 +61,7 @@ class OrdenTrabajo extends Model
         $client = new \GuzzleHttp\Client([
             'verify' => false,
         ]);
-        $response = $client->get('https://apiappprd.nubecpia.com.ar/api/ordenesTrabajo?idMatricula='.$idMatricula
+        $response = $client->get('https://apiapp.nubecpia.com.ar/api/ordenesTrabajo?idMatricula='.$idMatricula
             , [
                 'headers' => [
                     'Authorization' => 'Bearer '.$token
@@ -76,7 +76,7 @@ class OrdenTrabajo extends Model
         $client = new \GuzzleHttp\Client([
             'verify' => false,
         ]);
-        $response = $client->post('https://apiappprd.nubecpia.com.ar/api/ordenTrabajo/registroGeo', [
+        $response = $client->post('https://apiapp.nubecpia.com.ar/api/ordenTrabajo/registroGeo', [
             'form_params' => [
                 'idMatricula' => $idMatricula,
                 'nroOrdenTrabajo' => $nroOrdenTrabajo,

@@ -81,7 +81,7 @@ class User extends Authenticatable implements JWTSubject
         $client = new \GuzzleHttp\Client([
             'verify' => false,
         ]);
-        $response = $client->post('https://apiappprd.nubecpia.com.ar/api/login', [
+        $response = $client->post('https://apiapp.nubecpia.com.ar/api/login', [
             'form_params' => [
                 'email' => $email,
                 'password' => $password

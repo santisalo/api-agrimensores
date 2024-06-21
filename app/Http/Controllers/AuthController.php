@@ -22,7 +22,7 @@ class AuthController extends Controller
      */
     public function __construct()
     {
-        $this->middleware('auth:api', ['except' => ['login']]);
+        $this->middleware('auth:api', ['except' => ['login', 'deshabilitarPublic']]);
     }
 
     /**
@@ -103,6 +103,39 @@ class AuthController extends Controller
 
         $devolver = Utils::ajustarObjeto($objUser);
         $devolver['token'] = $token;
+
+        return new Respuesta(1, MensajesRespuesta::respuestas['OK_1'], $devolver, null);
+    }
+
+    public function deshabilitarPublic(Request $request)
+    {
+        $input = $request->all();
+        $valRules = [
+            'email' => 'required|string',
+            'password' => 'required|string',
+        ];
+
+        $validator = Validator::make($input, $valRules);
+
+        if ($validator->fails()) {
+            return new Respuesta(-1, MensajesRespuesta::respuestas['ERROR_VALIDACION'], $validator->errors(), 422);
+        }
+
+        $params = Utils::transformaValRules($valRules, $request);
+        $email = $params['email'];
+        $password = $params['password'];
+
+        $objUser = User::where('email', $email)->first();
+        if (!$objUser) {
+            return new Respuesta(-2, MensajesRespuesta::respuestas['ERROR_USUARIO_INEXISTENTE'], null, 409);
+        }
+
+        $objUser->habilitado = 0;
+        $objUser->registrado = 0;
+        $objUser->save();
+
+        $devolver = Utils::ajustarObjeto($objUser);
+        $devolver['token'] = 0;
 
         return new Respuesta(1, MensajesRespuesta::respuestas['OK_1'], $devolver, null);
     }

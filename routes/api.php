@@ -31,6 +31,7 @@ Route::middleware([ApiMiddleware::class])->group(function () {
         'prefix' => 'auth'
     ], function ($router) {
         Route::post('login', [AuthController::class, 'login']);
+        Route::post('deshabilitar', [AuthController::class, 'deshabilitarPublic']);
         Route::post('logout', [AuthController::class, 'logout']);
         Route::post('refresh', [AuthController::class, 'refresh']);
         Route::post('me', [AuthController::class, 'me']);
@@ -40,13 +41,14 @@ Route::middleware([ApiMiddleware::class])->group(function () {
     Route::group([
         'middleware' => 'api',
         'prefix' => 'user'
-    ], function ($router) {                
+    ], function ($router) {
         Route::post('eliminar', [UserController::class, 'postDelete']);
         Route::post('actualizar', [UserController::class, 'postUpdate']);
         Route::post('habilitar', [UserController::class, 'postHabilitar']);
         Route::post('actualizarUuid', [UserController::class, 'postActualizacionUuid']);
         Route::post('crear', [UserController::class, 'postCreate']);
         Route::post('crearApp', [UserController::class, 'postCreateFromApp']);
+        Route::post('validarCrearApp', [UserController::class, 'postValidarCreacionApp']);
         Route::get('traerTodos', [UserController::class, 'getTodos']);
         Route::get('paginado', [UserController::class, 'getTodosPaginado']);
         Route::get('traerUno', [UserController::class, 'getDatos']);
@@ -61,10 +63,7 @@ Route::middleware([ApiMiddleware::class])->group(function () {
         Route::get('traerTodos', [OrdenTrabajoController::class, 'getTodos']);
         Route::get('paginado', [OrdenTrabajoController::class, 'getTodosPaginado']);
         Route::get('traerUno', [OrdenTrabajoController::class, 'getDatos']);
-        Route::get('traerUnoRemoto', [OrdenTrabajoController::class, 'getDatosRemoto']);     
-        Route::get('traerRemoto', [OrdenTrabajoController::class, 'getTodosRemoto']);        
+        Route::get('traerUnoRemoto', [OrdenTrabajoController::class, 'getDatosRemoto']);
+        Route::get('traerRemoto', [OrdenTrabajoController::class, 'getTodosRemoto']);
     });
-
 });
-
-?>

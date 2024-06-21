@@ -23,7 +23,7 @@ class UserController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth:api', ['except' => ['postCreateFromApp', 'postCreate']]);
+        $this->middleware('auth:api', ['except' => ['postCreateFromApp', 'postCreate', 'postValidarCreacionApp']]);
     }
 
     public function getTodos(Request $request)
@@ -281,6 +281,60 @@ class UserController extends Controller
             200
         );
     }
+    
+    public function postValidarCreacionApp(Request $request)
+    {
+        $input = $request->all();
+        Log::info($input);
+        $valRules = [
+            'email' => 'required|string',
+            'password' => 'required|string',
+            'deviceUuid' => 'required|string',
+        ];
+
+        $validator = Validator::make($input, $valRules);
+
+        if ($validator->fails()) {
+            Log::info("Error de validacion: " . $validator->errors());
+            return new Respuesta(-1, MensajesRespuesta::respuestas['ERROR_VALIDACION'], $validator->errors(), 422);
+        }
+
+        $params = Utils::transformaValRules($valRules, $request);
+        $email = $params['email'];
+        $password = $params['password'];
+        $deviceUuid = $params['deviceUuid'];
+
+        $objUser = User::where('email', $email)->first();
+        if (!$objUser) {
+            return new Respuesta(-2, MensajesRespuesta::respuestas['ERROR_USUARIO_NO_ENCONTRADO'], null, 409);
+        }
+
+        $objUserExistente = User::where('email', $email)->where('registrado', 1)->first();
+        if ($objUserExistente) {
+            return new Respuesta(-2, MensajesRespuesta::respuestas['ERROR_ENCONTRADO_REGISTRADO'], null, 409);
+        }
+
+        $objUserExistente = User::where('email', $email)->where('registrado', 0)->where('habilitado', 0)->first();
+        if ($objUserExistente) {
+            return new Respuesta(-2, MensajesRespuesta::respuestas['ERROR_ENCONTRADO_DESHABILITADO'], null, 409);
+        }
+
+
+        $loginApiCpiaResponse = User::postLoginApiCpia($email, $password);
+        Log::info($loginApiCpiaResponse);
+        if ($loginApiCpiaResponse['status'] != "OK") {
+            return new Respuesta(-2, $loginApiCpiaResponse['message'], null, 409);
+        }
+
+        $devolver = true;
+
+        return new Respuesta(
+            1,
+            MensajesRespuesta::respuestas['OK_1'],
+            $devolver,
+            200
+        );
+    }
     public function postCreateFromApp(Request $request)
     {
         $input = $request->all();
@@ -303,15 +357,21 @@ class UserController extends Controller
         $password = $params['password'];
         $deviceUuid = $params['deviceUuid'];
 
+        $objUser = User::where('email', $email)->first();
+        if (!$objUser) {
+            return new Respuesta(-2, MensajesRespuesta::respuestas['ERROR_USUARIO_NO_ENCONTRADO'], null, 409);
+        }
+
         $objUserExistente = User::where('email', $email)->where('registrado', 1)->first();
         if ($objUserExistente) {
             return new Respuesta(-2, MensajesRespuesta::respuestas['ERROR_ENCONTRADO_REGISTRADO'], null, 409);
         }
 
-        $objUser = User::where('email', $email)->first();
-        if (!$objUser) {
-            return new Respuesta(-2, MensajesRespuesta::respuestas['ERROR_USUARIO_NO_ENCONTRADO'], null, 409);
+        $objUserExistente = User::where('email', $email)->where('registrado', 0)->where('habilitado', 0)->first();
+        if ($objUserExistente) {
+            return new Respuesta(-2, MensajesRespuesta::respuestas['ERROR_ENCONTRADO_DESHABILITADO'], null, 409);
         }
+
 
         $loginApiCpiaResponse = User::postLoginApiCpia($email, $password);
         Log::info($loginApiCpiaResponse);
